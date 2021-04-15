@@ -39,7 +39,7 @@ export default class TimeZoneComponent extends Component {
     updateTimeZone() {
         setInterval(() => {
             this.updateSelectedTimeZone();
-        }, 120000)
+        }, 5000)
     }
 
     handleDropdownChange(e) {
