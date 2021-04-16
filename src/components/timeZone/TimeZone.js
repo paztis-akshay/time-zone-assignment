@@ -1,69 +1,55 @@
-import React, { Component } from 'react';
+import React , {useEffect, useState} from 'react';
+import axios from 'axios';
+import {GETTIMEZONEURL, INTERVAL} from '../../config/time-zone-config';
 
-export default class TimeZoneComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            selectedTimeZone: {},
-            timeZones: [],
-            currTime: ''
-        }
+export const TimeZoneComponent = (props) => {
 
-        this.updateTimeZone = this.updateTimeZone.bind(this);
-        this.handleDropdownChange = this.handleDropdownChange.bind(this);
-    }
+    const [selectedTimeZone, setSelectedTimeZone] = useState({});
+    const [timeZones, setTimeZones] = useState([]);
+    const [currTime, setCurrTime] = useState('');
 
-    componentDidMount() {
-        fetch('http://api.timezonedb.com/v2.1/list-time-zone?key=XWSLLPX5RMIZ&format=json&zone=Europe').then(res => Promise.all([res.status, res.json()]))
-        .then(([status, timeZoneData]) => {
-          this.setState({
-              timeZones: timeZoneData.zones
-          })
+    useEffect(() => {
+        axios.get(GETTIMEZONEURL, {crossdomain: true}).then(res => {
+          setTimeZones(res.data.zones)
         })
         .catch((err => {
             console.log(err);
         }));
-    }
+      }, []);
 
-    updateSelectedTimeZone() {
-        const {selectedTimeZone} = this.state;
+    function updateSelectedTimeZone() {
         // eslint-disable-next-line no-useless-concat
-        fetch('http://api.timezonedb.com/v2/get-time-zone?key=XWSLLPX5RMIZ&format=json&by=zone&zone=Europe/'+ `${selectedTimeZone.countryName}` ).then(
-            res => Promise.all([res.status, res.json()])
-        ).then(([status, currTime]) => {
-            this.setState({currTime: currTime.formatted});
-            this.updateTimeZone();
+        axios.get(GETTIMEZONEURL + '/' + `${selectedTimeZone.countryName}`, {crossdomain: true}).then(res =>  {
+            setCurrTime(res.data.currTime.formatted);
+            updateTimeZone();
         })
     }
 
-    updateTimeZone() {
+    function updateTimeZone() {
         setInterval(() => {
-            this.updateSelectedTimeZone();
-        }, 5000)
+            updateSelectedTimeZone();
+        }, INTERVAL)
     }
 
-    handleDropdownChange(e) {
-        this.setState({
-            selectedTimeZone: e.target.value
-        });
-        this.updateSelectedTimeZone();
+    function handleDropdownChange(e) {
+        setSelectedTimeZone(e);
+        updateSelectedTimeZone();
     }
 
-    render() {
-        const {timeZones, currTime} = this.state;
-        return (
+    return (
             <div className = 'box'>
                 <div className = 'dropdown-box'>
-                    <select id="dropdown" onChange={this.handleDropdownChange}>
+                    <select id="dropdown" onChange={e => handleDropdownChange(e.target.value)}>
                         {
                             timeZones.map((item, index) => {
-                                return <option value={item.countryName}>{item.zoneName}</option>
+                                return <option key={index} value={item.counryName}>{item.zoneName}</option>
                             })
                         }
                     </select>
                 </div>
-               {currTime.length ? <div>{currTime}</div> : ''}
+                {currTime.length ? <div>{props.currTime}</div> : ''}
             </div>
-        )
-    }
+    )
 }
+
+export default TimeZoneComponent;
